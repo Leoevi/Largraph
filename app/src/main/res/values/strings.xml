@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Largraph</string>
+    <string name="btn_start">Start</string>
+    <string name="win">Congratulations</string>
+    <string name="win_detail">You win!</string>
+    <string name="next_lvl">Next level</string>
+    <string name="lose">Too bad</string>
+    <string name="lose_detail">You lose!</string>
+    <string name="go_back">Return to Title Screen</string>
+    <string name="lvl">Level</string>
+</resources>
