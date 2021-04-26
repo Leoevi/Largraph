@@ -11,6 +11,7 @@ import android.content.DialogInterface;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.View;
@@ -30,6 +31,9 @@ public class GameActivity extends AppCompatActivity {
     private ArrayList<Entity> enemies;
     public int enemyCount;
     public Entity hero;
+
+    private ArrayList<PointF> enemyPositions; // This is made to not place enemy in the same place
+    public static final float MINIMUM_DISTANCE = 90;
 
     public RelativeLayout gameLayout;
     public ImageView smoke;
@@ -60,11 +64,7 @@ public class GameActivity extends AppCompatActivity {
     public void setup() {
         currentLevel++;
 
-        // Reset all attributes (in case of recreation or starting intent)
-//        attackQueue = new ArrayList<>();
-//        enemies = new ArrayList<>();
-//        enemyCount = 0;
-//        hero = null;
+        enemyPositions = new ArrayList<>();
 
         // Action bar
         String level = getString(R.string.lvl); // https://stackoverflow.com/questions/13388493/how-can-i-convert-the-android-resources-int-to-a-string-eg-android-r-string-c
@@ -121,9 +121,9 @@ public class GameActivity extends AppCompatActivity {
         attackQueue = new ArrayList<>();
         enemies = new ArrayList<>();
         for (int i = 0; i < enemyCount; i++) {
-            // TODO: create new view objects (LinearLayout that contains an ImageButton & a TextView) (aka an enemy), then Generate unique ID
+            // TODO: create new view objects (aka an enemy)
             // TODO: then add the newly created layout to the GameActivity layout (to display) [random positions]
-            int randomHP = (rnd.nextInt(enemyCount - 1) + 1) * 5;
+            int randomHP = (rnd.nextInt(enemyCount - 2) + 1) * 5;
             enemies.add(new Entity(randomHP, Entity.ENEMY, this, gameLayout));
         }
 
@@ -147,7 +147,7 @@ public class GameActivity extends AppCompatActivity {
 
         // If all enemies have been clicked
         if (attackQueue.size() >= enemyCount) {
-            // TODO: Thread sleep 500ms? (Progress bar meisam OR https://www.youtube.com/watch?v=aTT4GfojkHA)
+            // TODO: Thread sleep 500ms? (https://www.youtube.com/watch?v=aTT4GfojkHA)
             battle();
         }
     }
@@ -286,9 +286,27 @@ public class GameActivity extends AppCompatActivity {
             // https://stackoverflow.com/questions/363681/how-do-i-generate-random-integers-within-a-specific-range-in-java
             // Random coordinates
 //            int width = layout.getMeasuredWidth();
-//            int height = layout.getMeasuredHeight(); // https://stackoverflow.com/questions/14592930/getwidth-returns-0-if-set-by-androidlayout-width-match-parent (yuung chip haii laei, mai tum mun laew)
-            float randomX = (float) (0.1 + Math.random() * (0.8 - 0.1)) * GameActivity.width; // Random within the screen 20% border
-            float randomY = (float) (0.1 + Math.random() * (0.8 - 0.1)) * GameActivity.height;
+//            int height = layout.getMeasuredHeight(); // https://stackoverflow.com/questions/14592930/getwidth-returns-0-if-set-by-androidlayout-width-match-parent (too much of a hassle, will use DisplayMetric Instead)
+            // The point of this do-while is to not place enemy in the same place
+            boolean farEnough = true;
+            float randomX, randomY;
+            PointF randomPoint;
+            do {
+                randomX = (float) (0.1 + Math.random() * (0.8 - 0.1)) * GameActivity.width; // Random within the screen 20% border
+                randomY = (float) (0.1 + Math.random() * (0.8 - 0.1)) * GameActivity.height;
+
+                randomPoint = new PointF(randomX, randomY);
+
+                for (PointF occupiedPoint : GameActivity.this.enemyPositions) {
+                    if (Math.abs(randomPoint.x - occupiedPoint.x) >= MINIMUM_DISTANCE || Math.abs(randomPoint.y - occupiedPoint.y) >= MINIMUM_DISTANCE) {
+                        farEnough = true;
+                    } else {
+                        farEnough = false;
+                        break;
+                    }
+                }
+            } while (!farEnough);
+            GameActivity.this.enemyPositions.add(randomPoint);
             setCoordinates(context, randomX, randomY);
 
             // Display what was being made
@@ -320,7 +338,7 @@ public class GameActivity extends AppCompatActivity {
 
         public void setCoordinates(Context context, float x, float y) { // Use context in order to position things properly (display dpi)
             // https://stackoverflow.com/questions/12351695/programmatically-set-imageview-position-in-dp
-            float factor = context.getResources().getDisplayMetrics().density; // display dependent
+            float factor = context.getResources().getDisplayMetrics().density; // display independent
 
             int xOffsetDP = 18; // 18dp
             float xOffsetPX = xOffsetDP * factor;
